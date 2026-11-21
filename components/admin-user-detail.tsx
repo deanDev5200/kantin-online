@@ -18,7 +18,6 @@ type DetailUser = {
     cardStatus: "ACTIVE" | "BLOCKED";
     cardBlockReason: "MANUAL" | "PIN_ATTEMPTS" | null;
     hasPin: boolean;
-    monthlyLimitRupiah: number | null;
   } | null;
 };
 
@@ -146,9 +145,6 @@ function StudentCardPanel({
   onChanged: () => void;
 }) {
   const [cardUid, setCardUid] = useState(student.cardUid ?? "");
-  const [limit, setLimit] = useState(
-    student.monthlyLimitRupiah == null ? "" : String(student.monthlyLimitRupiah),
-  );
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -162,7 +158,6 @@ function StudentCardPanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         cardUid: cardUid.trim() || undefined,
-        monthlyLimitRupiah: limit.trim() === "" ? null : Number(limit.replace(/[^0-9]/g, "")),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -204,16 +199,6 @@ function StudentCardPanel({
             value={cardUid}
             onChange={(e) => setCardUid(e.target.value)}
             placeholder="Belum ditautkan"
-          />
-        </div>
-        <div>
-          <label className="kc-label">Limit Bulanan (Rp, kosong = tanpa limit)</label>
-          <input
-            className="kc-input"
-            inputMode="numeric"
-            value={limit}
-            onChange={(e) => setLimit(e.target.value)}
-            placeholder="Tanpa limit"
           />
         </div>
       </div>

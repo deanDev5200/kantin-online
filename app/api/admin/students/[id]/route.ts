@@ -22,7 +22,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     cardStatus?: "ACTIVE" | "BLOCKED";
     cardBlockReason?: "MANUAL" | "PIN_ATTEMPTS" | null;
     pinAttempts?: number;
-    monthlyLimitRupiah?: number | null;
   } = {};
 
   if ("cardUid" in body) {
@@ -52,17 +51,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data.pinAttempts = 0;
     } else {
       return NextResponse.json({ error: "Status kartu tidak valid" }, { status: 400 });
-    }
-  }
-
-  if ("monthlyLimitRupiah" in body) {
-    const raw = body.monthlyLimitRupiah;
-    if (raw === null) {
-      data.monthlyLimitRupiah = null;
-    } else if (typeof raw === "number" && Number.isInteger(raw) && raw >= 0) {
-      data.monthlyLimitRupiah = raw;
-    } else {
-      return NextResponse.json({ error: "Limit bulanan tidak valid" }, { status: 400 });
     }
   }
 

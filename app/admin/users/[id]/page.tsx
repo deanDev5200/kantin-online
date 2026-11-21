@@ -39,7 +39,6 @@ export default async function AdminUserDetailPage({
                 cardStatus: user.student.cardStatus,
                 cardBlockReason: user.student.cardBlockReason,
                 hasPin: Boolean(user.student.cardPinHash),
-                monthlyLimitRupiah: user.student.monthlyLimitRupiah,
               }
             : null,
         }}

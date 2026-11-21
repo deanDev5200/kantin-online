@@ -94,6 +94,3 @@ export const assignStudentCardSchema = z.object({
   cardUid: z.string().trim().min(1, "UID kartu wajib diisi"),
 });
 
-export const setMonthlyLimitSchema = z.object({
-  monthlyLimitRupiah: z.number().int().min(0).nullable(),
-});

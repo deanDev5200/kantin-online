@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCashierSession } from "@/lib/session";
 import { GRHA_LABELS } from "@/lib/constants";
+import { getMonthlyLimitRupiah } from "@/lib/settings";
 
 export async function POST(request: Request) {
   if (!(await getCashierSession())) {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   // Compute this month's spending (for limit) and overall balance.
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [spentAgg, paidAgg, spentAllAgg] = await Promise.all([
+  const [spentAgg, paidAgg, spentAllAgg, monthlyLimitRupiah] = await Promise.all([
     prisma.transaction.aggregate({
       where: {
         studentId: student.id,
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       where: { studentId: student.id, status: "COMPLETED" },
       _sum: { totalRupiah: true },
     }),
+    getMonthlyLimitRupiah(),
   ]);
   const balanceRupiah =
     (paidAgg._sum.amountRupiah ?? 0) - (spentAllAgg._sum.totalRupiah ?? 0);
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
     grha: GRHA_LABELS[student.grha],
     cardStatus: student.cardStatus,
     hasPin: Boolean(student.cardPinHash),
-    monthlyLimitRupiah: student.monthlyLimitRupiah,
+    monthlyLimitRupiah,
     monthSpentRupiah: spentAgg._sum.totalRupiah ?? 0,
     balanceRupiah,
   });

@@ -36,3 +36,4 @@ export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const CASHIER_TTL_SECONDS = 60 * 60 * 8; // 8 hours
 
 export const CASHIER_PASSWORD_SETTING_KEY = "cashier_password_hash";
+export const MONTHLY_LIMIT_SETTING_KEY = "monthly_limit_rupiah";

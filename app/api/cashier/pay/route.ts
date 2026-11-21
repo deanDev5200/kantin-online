@@ -4,6 +4,7 @@ import { getCashierSession } from "@/lib/session";
 import { verifyPassword } from "@/lib/password";
 import { MAX_PIN_ATTEMPTS } from "@/lib/constants";
 import { cashierPaySchema } from "@/lib/validation";
+import { getMonthlyLimitRupiah } from "@/lib/settings";
 
 export async function POST(request: Request) {
   if (!(await getCashierSession())) {
@@ -111,8 +112,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Enforce monthly limit if set.
-  if (student.monthlyLimitRupiah != null) {
+  // Enforce the global monthly limit (if configured).
+  const monthlyLimitRupiah = await getMonthlyLimitRupiah();
+  if (monthlyLimitRupiah != null) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const spentAgg = await prisma.transaction.aggregate({
@@ -124,11 +126,11 @@ export async function POST(request: Request) {
       _sum: { totalRupiah: true },
     });
     const spent = spentAgg._sum.totalRupiah ?? 0;
-    if (spent + totalRupiah > student.monthlyLimitRupiah) {
+    if (spent + totalRupiah > monthlyLimitRupiah) {
       return NextResponse.json(
         {
           error: `Melebihi limit bulanan. Sisa limit: Rp ${(
-            student.monthlyLimitRupiah - spent
+            monthlyLimitRupiah - spent
           ).toLocaleString("id-ID")}`,
         },
         { status: 400 },

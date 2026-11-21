@@ -29,7 +29,7 @@ Sistem Pembayaran Business Center secara E-Money. A web application for managing
 ### Roles
 - **Siswa (Student)** - view transaction history, set/change the RFID card PIN, block/unblock their own card, and change username/password.
 - **Guru/Staff (Matta/Pitta)** - assigned to exactly one Grha. Record money collected from students, view per-student balances, and produce (read-only) monthly reports.
-- **Admin** - manage all accounts (create, edit, delete, Excel import), assign Grha memberships, link RFID card UIDs to students, set per-student monthly spending limits, and manage the shared cashier password.
+- **Admin** - manage all accounts (create, edit, delete, Excel import), assign Grha memberships, link RFID card UIDs to students, set the global monthly spending limit, mark monthly bills paid, and manage the shared cashier password.
 
 ### Cashier terminal (`/bc/kasir`)
 - Password-gated (single shared password managed by admin).
@@ -40,7 +40,7 @@ Sistem Pembayaran Business Center secara E-Money. A web application for managing
 
 ### Business rules
 - **Postpaid model:** students spend at the Business Center; the Matta/Pitta collects money and records payments. Balance = collected - spent.
-- **Per-student monthly limit** enforced at checkout (optional).
+- **Global monthly limit** (one setting for all students) enforced at checkout, configurable in Admin -> Pengaturan.
 - **Card block reasons:** `MANUAL` (student/admin) or `PIN_ATTEMPTS` (automatic after 5 wrong PINs). Only the card owner or an admin may unblock.
 - **Monthly settlement:** the **admin** marks each Grha's monthly bill as paid to the Business Center (Admin -> Tagihan). Staff only view report status.
 
@@ -240,12 +240,12 @@ prisma.config.ts              Prisma 7 config (datasource URL + seed)
 
 ### Entities
 - **User** - base account (`username`, `passwordHash`, `role`, `fullName`). One-to-one with `Student` or `Staff` depending on role.
-- **Student** - `grha`, RFID `cardUid` (unique), `cardPinHash`, `cardStatus`, `cardBlockReason`, `pinAttempts`, optional `monthlyLimitRupiah`.
+- **Student** - `grha`, RFID `cardUid` (unique), `cardPinHash`, `cardStatus`, `cardBlockReason`, `pinAttempts`.
 - **Staff** - `grha` (exactly one; max 2 staff per Grha).
 - **Transaction** - a completed purchase with line items (`TransactionItem`).
 - **Payment** - money recorded as collected by a Matta/Pitta from a student.
 - **MonthlySettlement** - a Grha's monthly bill paid to the Business Center (unique per grha/year/month).
-- **Setting** - key/value store (currently the hashed cashier password).
+- **Setting** - key/value store (hashed cashier password and the global monthly limit).
 
 ### The 9 Grha
 `Airsanya, Daksina, Genya, Madhya, Nairiti, Pascima, Purwa, Uttara, Wayabhya`
@@ -270,7 +270,7 @@ prisma.config.ts              Prisma 7 config (datasource URL + seed)
 2. The page waits for a card tap; the RFID reader writes the UID into a focused input and submits.
 3. `/api/cashier/lookup` resolves the UID, checks card status and PIN existence, and returns the student's info.
 4. Student enters their PIN on the numpad; `/api/cashier/pay` validates it server-side.
-5. The server recomputes totals, enforces the monthly limit, records the transaction, and resets the attempt counter.
+5. The server recomputes totals, enforces the balance and global monthly limit, records the transaction, and resets the attempt counter.
 6. Wrong PIN increments `pinAttempts`; at 5 the card is blocked with reason `PIN_ATTEMPTS`.
 
 ### Reporting

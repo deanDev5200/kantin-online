@@ -65,7 +65,7 @@ A **development-only** web app for e-money payments at a school Business Center 
 ### Payment model (postpaid)
 - A student's **balance** = total `Payment` amounts - total completed `Transaction` amounts.
 - A purchase is rejected if `total > balance` (`app/api/cashier/pay/route.ts`, plus an early client check in the terminal).
-- Optional **monthly spending limit** (`Student.monthlyLimitRupiah`) is enforced at checkout.
+- The **monthly spending limit** is a single **global** setting (`Setting` key `monthly_limit_rupiah`, managed in Admin -> Pengaturan), enforced per student at checkout. There is no per-student limit.
 - Wrong card PIN increments `pinAttempts`; at 5 the card is auto-blocked with `cardBlockReason = "PIN_ATTEMPTS"`. Only the card owner or an admin may unblock.
 - Monthly bills are settled per Grha via `MonthlySettlement` (unique per grha/year/month). **Only admin** marks a bill as paid (`/api/admin/settlements`); staff only view report status.
 

@@ -1,9 +1,12 @@
 import { requireStudent } from "@/lib/auth";
 import { GRHA_LABELS } from "@/lib/constants";
+import { formatRupiah } from "@/lib/money";
+import { getMonthlyLimitRupiah } from "@/lib/settings";
 import { CredentialsForm } from "@/components/credentials-form";
 
 export default async function StudentAccountPage() {
   const { student } = await requireStudent();
+  const monthlyLimit = await getMonthlyLimitRupiah();
 
   return (
     <div className="space-y-6">
@@ -21,9 +24,7 @@ export default async function StudentAccountPage() {
           <div>
             <dt className="kc-muted">Limit Bulanan</dt>
             <dd className="font-medium">
-              {student.monthlyLimitRupiah == null
-                ? "Tanpa limit"
-                : `Rp ${student.monthlyLimitRupiah.toLocaleString("id-ID")}`}
+              {monthlyLimit == null ? "Tanpa limit" : formatRupiah(monthlyLimit)}
             </dd>
           </div>
         </dl>
