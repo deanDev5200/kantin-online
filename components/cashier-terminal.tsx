@@ -195,14 +195,6 @@ export function CashierTerminal() {
     setStage("cart");
   }
 
-  function appendPinDigit(d: string) {
-    setPin((prev) => (prev.length >= 6 ? prev : prev + d));
-  }
-
-  function backspacePin() {
-    setPin((prev) => prev.slice(0, -1));
-  }
-
   return (
     <div className="space-y-4">
       {error && (
@@ -355,7 +347,7 @@ export function CashierTerminal() {
               Total: <strong>{formatRupiah(total)}</strong>
             </p>
             <p>
-              Saldo tersedia: <strong>{formatRupiah(lookup.balanceRupiah)}</strong>
+              Saldo: <strong className="text-success">Saldo Cukup</strong>
             </p>
             {lookup.monthlyLimitRupiah != null && (
               <p className="kc-muted">
@@ -380,29 +372,6 @@ export function CashierTerminal() {
               <p className="kc-muted mt-1">
                 Karakter tersembunyi. Gunakan numpad atau keyboard.
               </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 max-w-xs">
-              {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className="kc-btn kc-btn-secondary font-mono text-lg"
-                  onClick={() => appendPinDigit(d)}
-                >
-                  {d}
-                </button>
-              ))}
-              <button type="button" className="kc-btn kc-btn-secondary col-span-2 text-lg" onClick={backspacePin}>
-                Hapus
-              </button>
-              <button
-                type="button"
-                className="kc-btn kc-btn-secondary font-mono text-lg"
-                onClick={() => appendPinDigit("0")}
-              >
-                0
-              </button>
             </div>
 
             <button className="kc-btn kc-btn-primary" type="submit">
