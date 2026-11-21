@@ -21,12 +21,6 @@ type DetailUser = {
   } | null;
 };
 
-const ROLE_LABEL: Record<DetailUser["role"], string> = {
-  STUDENT: "Siswa",
-  STAFF: "Matta/Pitta",
-  ADMIN: "Admin",
-};
-
 export function AdminUserDetail({ user }: { user: DetailUser }) {
   const router = useRouter();
   const [fullName, setFullName] = useState(user.fullName);
@@ -88,7 +82,11 @@ export function AdminUserDetail({ user }: { user: DetailUser }) {
           </div>
           <div>
             <label className="kc-label">Peran</label>
-            <input className="kc-input bg-gray-50" value={ROLE_LABEL[user.role]} readOnly />
+            <select className="kc-input bg-gray-50" value={user.role} disabled>
+              <option value="STUDENT">Siswa</option>
+              <option value="STAFF">Matta/Pitta</option>
+              <option value="ADMIN">Admin</option>
+            </select>
           </div>
           {user.role !== "ADMIN" && (
             <div>
