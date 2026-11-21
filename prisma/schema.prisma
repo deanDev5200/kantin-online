@@ -1,0 +1,161 @@
+// Prisma schema for Kantin Canggih (Business Center e-money payment system)
+// Dev-only. No deployment concerns.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+}
+
+enum Grha {
+  AIRSANYA
+  DAKSINA
+  GENYA
+  MADHYA
+  NAIRITI
+  PASCIMA
+  PURWA
+  UTTARA
+  WAYABHYA
+}
+
+enum CardStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum CardBlockReason {
+  MANUAL
+  PIN_ATTEMPTS
+}
+
+enum TransactionStatus {
+  COMPLETED
+  VOIDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role
+  fullName     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student Student?
+  staff   Staff?
+
+  paymentsRecorded Payment[]          @relation("PaymentRecordedBy")
+  settlementsPaid  MonthlySettlement[] @relation("SettlementPaidBy")
+
+  @@index([role])
+}
+
+model Student {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grha    Grha
+
+  cardUid         String?         @unique
+  cardPinHash     String?
+  cardStatus      CardStatus      @default(ACTIVE)
+  cardBlockReason CardBlockReason?
+  pinAttempts     Int             @default(0)
+
+  monthlyLimitRupiah Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  payments     Payment[]
+
+  @@index([grha])
+}
+
+model Staff {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grha   Grha
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paymentsReceived Payment[]
+
+  @@index([grha])
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  studentId String
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  totalRupiah Int
+  status    TransactionStatus @default(COMPLETED)
+  createdAt DateTime          @default(now())
+
+  items TransactionItem[]
+
+  @@index([studentId, createdAt])
+  @@index([createdAt])
+}
+
+model TransactionItem {
+  id                String      @id @default(cuid())
+  transactionId     String
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  name              String
+  unitPriceRupiah   Int
+  quantity          Int
+  subtotalRupiah    Int
+
+  @@index([transactionId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  staffId         String
+  staff           Staff    @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  amountRupiah    Int
+  note            String?
+  recordedByUserId String
+  recordedBy      User     @relation("PaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now())
+
+  @@index([studentId, createdAt])
+  @@index([staffId, createdAt])
+}
+
+model MonthlySettlement {
+  id                String   @id @default(cuid())
+  grha              Grha
+  periodYear        Int
+  periodMonth       Int
+  totalSpentRupiah  Int
+  paidAt            DateTime @default(now())
+  paidByUserId      String
+  paidBy            User     @relation("SettlementPaidBy", fields: [paidByUserId], references: [id], onDelete: Restrict)
+  note              String?
+
+  @@unique([grha, periodYear, periodMonth])
+  @@index([grha, periodYear, periodMonth])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
