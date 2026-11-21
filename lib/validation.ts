@@ -79,6 +79,13 @@ export const settlementSchema = z.object({
   note: z.string().trim().optional(),
 });
 
+export const adjustSettlementSchema = z.object({
+  grha: grhaEnum,
+  periodYear: z.number().int().min(2000).max(3000),
+  periodMonth: z.number().int().min(1).max(12),
+  note: z.string().trim().optional(),
+});
+
 export const updateCashierPasswordSchema = z.object({
   newPassword: z.string().min(6, "Password kasir minimal 6 karakter"),
 });

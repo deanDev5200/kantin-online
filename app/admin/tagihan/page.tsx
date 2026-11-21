@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatRupiah } from "@/lib/money";
 import { GRHA_LABELS } from "@/lib/constants";
 import { SettlementButton } from "@/components/settlement-button";
+import { AdjustSettlementButton } from "@/components/adjust-settlement-button";
 import type { Grha } from "@prisma/client";
 
 type MonthKey = string; // "YYYY-MM"
@@ -134,17 +135,28 @@ export default async function AdminBillsPage() {
                         </td>
                         <td className="text-right">
                           {settlement ? (
-                            <span className="kc-muted text-xs">
-                              {mismatch ? (
-                                <>
-                                  Dibayar {formatRupiah(settlement.totalSpentRupiah)} pada{" "}
-                                </>
-                              ) : null}
-                              {settlement.paidAt.toLocaleString("id-ID", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="kc-muted text-xs">
+                                {mismatch ? (
+                                  <>
+                                    Dibayar {formatRupiah(settlement.totalSpentRupiah)} pada{" "}
+                                  </>
+                                ) : null}
+                                {settlement.paidAt.toLocaleString("id-ID", {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })}
+                              </span>
+                              {mismatch && (
+                                <AdjustSettlementButton
+                                  grha={g}
+                                  periodYear={Number(key.split("-")[0])}
+                                  periodMonth={Number(key.split("-")[1])}
+                                  previousRupiah={settlement.totalSpentRupiah}
+                                  currentRupiah={total}
+                                />
+                              )}
+                            </div>
                           ) : monthEnded ? (
                             <SettlementButton
                               grha={g}
