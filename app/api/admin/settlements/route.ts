@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { settlementSchema, adjustSettlementSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Tagihan bulan ini sudah ditandai lunas" }, { status: 409 });
   }
 
-  await prisma.monthlySettlement.create({
+  const settlement = await prisma.monthlySettlement.create({
     data: {
       grha,
       periodYear,
@@ -63,6 +64,13 @@ export async function POST(request: Request) {
       paidByUserId: session.userId,
       note: note || null,
     },
+  });
+
+  await audit({
+    action: "admin.settlement.create",
+    entityType: "MonthlySettlement",
+    entityId: settlement.id,
+    metadata: { grha, periodYear, periodMonth, totalSpentRupiah },
   });
 
   return NextResponse.json({ ok: true, totalSpentRupiah });
@@ -119,6 +127,19 @@ export async function PATCH(request: Request) {
       paidAt: new Date(),
       paidByUserId: session.userId,
       note: note || existing.note,
+    },
+  });
+
+  await audit({
+    action: "admin.settlement.adjust",
+    entityType: "MonthlySettlement",
+    entityId: updated.id,
+    metadata: {
+      grha,
+      periodYear,
+      periodMonth,
+      previousRupiah: existing.totalSpentRupiah,
+      totalSpentRupiah: updated.totalSpentRupiah,
     },
   });
 

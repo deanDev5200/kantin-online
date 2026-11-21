@@ -62,12 +62,20 @@ A **development-only** web app for e-money payments at a school Business Center 
 - **Card PIN** is separate from login password: exactly **6 digits** (`/^[0-9]{6}$/`). It is masked everywhere and never logged.
 - Passwords are stored hashed only. The **plaintext is shown exactly once** at create/reset time. Never add an endpoint or UI that reveals a stored password.
 
+### Audit logging
+- Every mutation and auth event writes an append-only `AuditLog` row via `lib/audit.ts` `audit({ action, entityType, entityId, metadata })`. Call it from route handlers **after** the mutation succeeds; it never throws (failures go to the logger).
+- Never log secrets: no passwords, PINs, hashes, or session tokens. Card UIDs are stored only as last-4 in `metadata`.
+- Do not log failed login/PIN attempts (deliberate choice). Do log auto-blocks.
+- Actor is resolved from the user session; the cashier has no account, so pass `actorLabel: "CASHIER"`. IP/user-agent are captured automatically from request headers.
+- Viewer: `/admin/logs` (page + `/api/admin/logs`). Retention is forever; no purge.
+- Use `lib/logger.ts` (`logger.info/warn/error`) for structured server logs, separate from the audit trail.
+
 ### Payment model (postpaid)
 - A student's **balance** = total `Payment` amounts - total completed `Transaction` amounts.
 - A purchase is rejected if `total > balance` (`app/api/cashier/pay/route.ts`, plus an early client check in the terminal).
 - The **monthly spending limit** is a single **global** setting (`Setting` key `monthly_limit_rupiah`, managed in Admin -> Pengaturan), enforced per student at checkout. There is no per-student limit.
 - Wrong card PIN increments `pinAttempts`; at 5 the card is auto-blocked with `cardBlockReason = "PIN_ATTEMPTS"`. Only the card owner or an admin may unblock.
-- Monthly bills are settled per Grha via `MonthlySettlement` (unique per grha/year/month). **Only admin** marks a bill as paid (`/api/admin/settlements`); staff only view report status.
+- Monthly bills are settled per Grha via `MonthlySettlement` (unique per grha/year/month). **Only admin** marks a bill as paid (`/api/admin/settlements`); staff only view report status. A month can only be settled after it has ended, and a settled month whose total later changes can be adjusted (`PATCH`).
 
 ### API route conventions
 - App Router route handlers under `app/api/**/route.ts`.

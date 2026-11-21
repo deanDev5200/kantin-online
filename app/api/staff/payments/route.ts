@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { recordPaymentSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -43,6 +44,13 @@ export async function POST(request: Request) {
       note: note || null,
       recordedByUserId: session.userId,
     },
+  });
+
+  await audit({
+    action: "staff.payment.record",
+    entityType: "Payment",
+    entityId: payment.id,
+    metadata: { studentId, amountRupiah },
   });
 
   return NextResponse.json({ ok: true, id: payment.id });

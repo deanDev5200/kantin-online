@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { hashPassword } from "@/lib/password";
 import { CASHIER_PASSWORD_SETTING_KEY } from "@/lib/constants";
 import { updateCashierPasswordSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
     create: { key: CASHIER_PASSWORD_SETTING_KEY, value },
     update: { value },
   });
+
+  await audit({ action: "admin.setting.cashier_password" });
 
   return NextResponse.json({ ok: true });
 }

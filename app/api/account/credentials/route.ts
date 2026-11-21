@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword } from "@/lib/password";
 import { getSession, createUserSession } from "@/lib/session";
 import { changeCredentialsSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -37,12 +38,22 @@ export async function POST(request: Request) {
     }
   }
 
+  const usernameChanged = newUsername !== user.username;
+  const passwordChanged = Boolean(newPassword);
+
   const updated = await prisma.user.update({
     where: { id: user.id },
     data: {
       username: newUsername,
       ...(newPassword ? { passwordHash: await hashPassword(newPassword) } : {}),
     },
+  });
+
+  await audit({
+    action: "account.credentials.change",
+    entityType: "User",
+    entityId: updated.id,
+    metadata: { usernameChanged, passwordChanged },
   });
 
   // Refresh session cookie with new username.

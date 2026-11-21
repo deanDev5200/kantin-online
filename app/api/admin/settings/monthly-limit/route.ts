@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { MONTHLY_LIMIT_SETTING_KEY } from "@/lib/constants";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
   // null / empty string => remove the limit.
   if (raw === null || raw === "" || raw === undefined) {
     await prisma.setting.deleteMany({ where: { key: MONTHLY_LIMIT_SETTING_KEY } });
+    await audit({ action: "admin.setting.monthly_limit", metadata: { monthlyLimitRupiah: null } });
     return NextResponse.json({ ok: true, monthlyLimitRupiah: null });
   }
 
@@ -24,6 +26,7 @@ export async function POST(request: Request) {
 
   if (raw === 0) {
     await prisma.setting.deleteMany({ where: { key: MONTHLY_LIMIT_SETTING_KEY } });
+    await audit({ action: "admin.setting.monthly_limit", metadata: { monthlyLimitRupiah: null } });
     return NextResponse.json({ ok: true, monthlyLimitRupiah: null });
   }
 
@@ -32,6 +35,8 @@ export async function POST(request: Request) {
     create: { key: MONTHLY_LIMIT_SETTING_KEY, value: String(raw) },
     update: { value: String(raw) },
   });
+
+  await audit({ action: "admin.setting.monthly_limit", metadata: { monthlyLimitRupiah: raw } });
 
   return NextResponse.json({ ok: true, monthlyLimitRupiah: raw });
 }

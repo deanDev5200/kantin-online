@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { getSession } from "@/lib/session";
 import { setCardPinSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Kartu belum ditautkan oleh admin" }, { status: 400 });
   }
 
+  const isChange = Boolean(student.cardPinHash);
   await prisma.student.update({
     where: { id: student.id },
     data: {
@@ -35,6 +37,12 @@ export async function POST(request: Request) {
       cardStatus: "ACTIVE",
       cardBlockReason: null,
     },
+  });
+
+  await audit({
+    action: isChange ? "card.pin.change" : "card.pin.create",
+    entityType: "Student",
+    entityId: student.id,
   });
 
   return NextResponse.json({ ok: true });

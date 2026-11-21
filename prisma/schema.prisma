@@ -56,6 +56,7 @@ model User {
 
   paymentsRecorded Payment[]          @relation("PaymentRecordedBy")
   settlementsPaid  MonthlySettlement[] @relation("SettlementPaidBy")
+  auditLogs        AuditLog[]          @relation("AuditActor")
 
   @@index([role])
 }
@@ -156,4 +157,26 @@ model Setting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  actorUserId String?
+  actorUser   User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorRole   Role?
+  actorLabel  String?
+
+  action      String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  ip          String?
+  userAgent   String?
+
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([action])
+  @@index([entityType, entityId])
 }

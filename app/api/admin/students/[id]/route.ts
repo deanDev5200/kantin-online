@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { audit } from "@/lib/audit";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -55,5 +56,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   await prisma.student.update({ where: { id }, data });
+
+  if ("cardUid" in body) {
+    await audit({
+      action: "admin.card.link",
+      entityType: "Student",
+      entityId: id,
+      metadata: { cardLast4: data.cardUid ? data.cardUid.slice(-4) : null },
+    });
+  }
+  if ("cardStatus" in body) {
+    await audit({
+      action: data.cardStatus === "BLOCKED" ? "admin.card.block" : "admin.card.unblock",
+      entityType: "Student",
+      entityId: id,
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }

@@ -4,6 +4,7 @@ import { verifyPassword } from "@/lib/password";
 import { createCashierSession } from "@/lib/session";
 import { CASHIER_PASSWORD_SETTING_KEY } from "@/lib/constants";
 import { cashierLoginSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -27,5 +28,6 @@ export async function POST(request: Request) {
   }
 
   await createCashierSession();
+  await audit({ action: "cashier.login", actorLabel: "CASHIER" });
   return NextResponse.json({ ok: true });
 }

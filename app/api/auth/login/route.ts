@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { createUserSession } from "@/lib/session";
 import { loginSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -22,5 +23,10 @@ export async function POST(request: Request) {
   }
 
   await createUserSession({ userId: user.id, role: user.role, username: user.username });
+  await audit({
+    action: "auth.login",
+    entityType: "User",
+    entityId: user.id,
+  });
   return NextResponse.json({ role: user.role });
 }

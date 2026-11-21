@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { updateUserSchema } from "@/lib/validation";
+import { audit } from "@/lib/audit";
 
 async function requireAdminApi() {
   const session = await getSession();
@@ -28,6 +29,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     include: { student: true, staff: true },
   });
   if (!user) return NextResponse.json({ error: "Pengguna tidak ditemukan" }, { status: 404 });
+
+  const prevFullName = user.fullName;
+  const prevGrha = user.student?.grha ?? user.staff?.grha ?? null;
 
   // Update fullName always.
   await prisma.user.update({ where: { id }, data: { fullName: parsed.data.fullName } });
@@ -57,6 +61,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  await audit({
+    action: "admin.user.update",
+    entityType: "User",
+    entityId: id,
+    metadata: {
+      fullName: { from: prevFullName, to: parsed.data.fullName },
+      grha: { from: prevGrha, to: parsed.data.grha ?? prevGrha },
+    },
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -73,5 +87,11 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: "Pengguna tidak ditemukan" }, { status: 404 });
 
   await prisma.user.delete({ where: { id } });
+  await audit({
+    action: "admin.user.delete",
+    entityType: "User",
+    entityId: id,
+    metadata: { username: user.username, fullName: user.fullName, role: user.role },
+  });
   return NextResponse.json({ ok: true });
 }

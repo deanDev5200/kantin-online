@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { createUserSchema } from "@/lib/validation";
 import { createAccount } from "@/lib/account-creation";
+import { audit } from "@/lib/audit";
 
 async function requireAdminApi() {
   const session = await getSession();
@@ -60,6 +61,12 @@ export async function POST(request: Request) {
       fullName: parsed.data.fullName,
       role: parsed.data.role as "STUDENT" | "STAFF" | "ADMIN",
       grha: parsed.data.grha as never,
+    });
+    await audit({
+      action: "admin.user.create",
+      entityType: "User",
+      entityId: result.userId,
+      metadata: { username: result.username, role: parsed.data.role, grha: parsed.data.grha ?? null },
     });
     return NextResponse.json({
       ok: true,

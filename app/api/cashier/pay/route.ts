@@ -5,6 +5,7 @@ import { verifyPassword } from "@/lib/password";
 import { MAX_PIN_ATTEMPTS } from "@/lib/constants";
 import { cashierPaySchema } from "@/lib/validation";
 import { getMonthlyLimitRupiah } from "@/lib/settings";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   if (!(await getCashierSession())) {
@@ -58,6 +59,13 @@ export async function POST(request: Request) {
           cardStatus: "BLOCKED",
           cardBlockReason: "PIN_ATTEMPTS",
         },
+      });
+      await audit({
+        action: "card.auto_block",
+        entityType: "Student",
+        entityId: student.id,
+        actorLabel: "CASHIER",
+        metadata: { reason: "PIN_ATTEMPTS", attempts: nextAttempts },
       });
       return NextResponse.json(
         { error: `PIN salah ${MAX_PIN_ATTEMPTS}x. Kartu diblokir.` },
@@ -151,6 +159,19 @@ export async function POST(request: Request) {
   await prisma.student.update({
     where: { id: student.id },
     data: { pinAttempts: 0 },
+  });
+
+  await audit({
+    action: "cashier.pay",
+    entityType: "Transaction",
+    entityId: tx.id,
+    actorLabel: "CASHIER",
+    metadata: {
+      studentId: student.id,
+      studentName: student.user.fullName,
+      totalRupiah,
+      itemCount: normalizedItems.length,
+    },
   });
 
   return NextResponse.json({

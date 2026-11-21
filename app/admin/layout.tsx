@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: "/admin/users", label: "Pengguna" },
           { href: "/admin/grha", label: "Penugasan Grha" },
           { href: "/admin/tagihan", label: "Tagihan" },
+          { href: "/admin/logs", label: "Log Aktivitas" },
           { href: "/admin/settings", label: "Pengaturan" },
         ]}
       />

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
       data: { cardStatus: "ACTIVE", cardBlockReason: null, pinAttempts: 0 },
     });
   }
+
+  await audit({
+    action: action === "block" ? "card.block" : "card.unblock",
+    entityType: "Student",
+    entityId: student.id,
+  });
 
   return NextResponse.json({ ok: true });
 }

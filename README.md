@@ -42,7 +42,13 @@ Sistem Pembayaran Business Center secara E-Money. A web application for managing
 - **Postpaid model:** students spend at the Business Center; the Matta/Pitta collects money and records payments. Balance = collected - spent.
 - **Global monthly limit** (one setting for all students) enforced at checkout, configurable in Admin -> Pengaturan.
 - **Card block reasons:** `MANUAL` (student/admin) or `PIN_ATTEMPTS` (automatic after 5 wrong PINs). Only the card owner or an admin may unblock.
-- **Monthly settlement:** the **admin** marks each Grha's monthly bill as paid to the Business Center (Admin -> Tagihan). Staff only view report status.
+- **Monthly settlement:** the **admin** marks each Grha's monthly bill as paid to the Business Center (Admin -> Tagihan). Staff only view report status. A month can only be settled after it ends, and a settled month whose total later changes can be adjusted.
+
+### Audit logging
+- Security audit + dispute trail, kept forever, viewable by admin at **Admin -> Log Aktivitas** (`/admin/logs`) with filters by action, actor, entity, and date.
+- Every mutation and successful login/logout is recorded (append-only). Secrets (passwords, PINs, hashes) are never logged; card UIDs are stored only as last-4.
+- The cashier has no user account, so its events are recorded with `CASHIER` as the actor plus the machine IP and timestamp.
+- Failed login/PIN attempts are intentionally not logged; automatic card blocks are.
 
 ---
 
@@ -207,14 +213,14 @@ app/
   login/                      Login page
   siswa/                      Student area (history, card, account)
   staff/                      Matta/Pitta area (students, report, account)
-  admin/                      Admin area (dashboard, users, import, grha, tagihan, settings)
+  admin/                      Admin area (dashboard, users, import, grha, tagihan, logs, settings)
   bc/kasir/                   Cashier terminal (password-gated, separate from user auth)
   api/
     auth/                     login, logout
     account/                  self-service credential change
     student/card/             set PIN, block/unblock
     staff/                    record payment
-    admin/                    users CRUD, reset password, import, template, students, settlements, cashier password
+    admin/                    users CRUD, reset password, import, template, students, settlements, cashier password, logs
     cashier/                  cashier login, card lookup, payment
 components/                   UI + client components
 lib/
@@ -227,6 +233,9 @@ lib/
   account-creation.ts         Shared account creation (single + import)
   constants.ts                Grha list, labels, limits, cookie names
   money.ts                    Rupiah formatting/parsing
+  settings.ts                 Global settings helpers (monthly limit)
+  audit.ts                    Append-only audit logging
+  logger.ts                   Structured server logger
 prisma/
   schema.prisma               Data model
   seed.ts                     Initial admin + cashier password
@@ -246,6 +255,7 @@ prisma.config.ts              Prisma 7 config (datasource URL + seed)
 - **Payment** - money recorded as collected by a Matta/Pitta from a student.
 - **MonthlySettlement** - a Grha's monthly bill paid to the Business Center (unique per grha/year/month).
 - **Setting** - key/value store (hashed cashier password and the global monthly limit).
+- **AuditLog** - append-only security/dispute trail (actor, action, entity, metadata, IP, timestamp). Actor FK is `SetNull` so logs survive user deletion.
 
 ### The 9 Grha
 `Airsanya, Daksina, Genya, Madhya, Nairiti, Pascima, Purwa, Uttara, Wayabhya`

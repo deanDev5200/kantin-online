@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCashierSession } from "@/lib/session";
 import { GRHA_LABELS } from "@/lib/constants";
 import { getMonthlyLimitRupiah } from "@/lib/settings";
+import { audit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   if (!(await getCashierSession())) {
@@ -48,6 +49,14 @@ export async function POST(request: Request) {
   ]);
   const balanceRupiah =
     (paidAgg._sum.amountRupiah ?? 0) - (spentAllAgg._sum.totalRupiah ?? 0);
+
+  await audit({
+    action: "cashier.lookup",
+    entityType: "Student",
+    entityId: student.id,
+    actorLabel: "CASHIER",
+    metadata: { cardLast4: cardUid.slice(-4) },
+  });
 
   return NextResponse.json({
     studentId: student.id,

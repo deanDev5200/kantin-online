@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getSession } from "@/lib/session";
 import { createAccount } from "@/lib/account-creation";
+import { audit } from "@/lib/audit";
 import { GRHA_LIST } from "@/lib/constants";
 import type { Grha, Role } from "@prisma/client";
 
@@ -110,6 +111,17 @@ export async function POST(request: Request) {
       results.push({ row: rowNumber, fullName, status: "error", error: message });
     }
   }
+
+  const created = results.filter((r) => r.status === "created");
+  await audit({
+    action: "admin.user.import",
+    entityType: "User",
+    metadata: {
+      totalRows: results.length,
+      createdCount: created.length,
+      failedCount: results.length - created.length,
+    },
+  });
 
   return NextResponse.json({ results });
 }
